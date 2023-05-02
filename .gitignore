@@ -13,6 +13,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+logs/
+*.log
 
 # Unit test / coverage reports
 htmlcov/
