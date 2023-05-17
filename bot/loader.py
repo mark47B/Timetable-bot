@@ -1,8 +1,8 @@
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 import asyncio
-import uvloop  # running only linux
+import uvloop
 
 from config import config
 
@@ -10,6 +10,6 @@ from config import config
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 storage = MemoryStorage()
-bot = Bot(token=config.bot_token.get_secret_value(), parse_mode=types.ParseMode.MARKDOWN_V2)
+bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode="markdownv2")
 loop = asyncio.get_event_loop()
-dp = Dispatcher(bot, loop=loop, storage=storage)
+dp = Dispatcher(loop=loop, storage=storage)
