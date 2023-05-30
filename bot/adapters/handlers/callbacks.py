@@ -10,17 +10,14 @@ from aiogram.filters.text import Text
 
 from loader import bot, dp
 
+from ..buttons import GetTimetableCallbackFactory
 
 router = Router()
 
 
-class GetTimetableCallbackFactory(CallbackData, prefix='get_timetable'):
-    day: Optional[int]
-
-
 @router.callback_query(GetTimetableCallbackFactory.filter())
 async def callbacks_get_timetable(
-        callback: types.CallbackQuery, 
+        callback: types.CallbackQuery,
         callback_data: GetTimetableCallbackFactory
 ):  
     if callback_data.day is None:

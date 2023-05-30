@@ -3,7 +3,14 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.command import Command
 from aiogram.types import Message
-from adapters.buttons import make_row_keyboard, available_days, available_time
+from adapters.buttons import make_row_keyboard, available_days, available_time, agreement
+
+from aiogram.types import ReplyKeyboardRemove
+
+import core.timetable as tt
+from ..buttons import get_timetable
+
+
 
 router = Router()
 
@@ -49,6 +56,20 @@ async def day_chosen_incorrectly(message: Message):
     )
 
 
+@router.message(
+    Reservation_fsm.choosing_time,
+    F.text.in_(available_time)
+)
+async def day_chosen(message: Message, state: FSMContext):
+    await state.update_data(chosen_time=message.text.lower())
+    user_data = await state.get_data()
+    await message.answer(
+        text=f"Вы выбрали день '{user_data['chosen_day']}' и время '{user_data['chosen_time']}'\. Бронируем?",
+        reply_markup=make_row_keyboard(agreement)
+    )
+    await state.set_state(Reservation_fsm.acceptance)
+
+
 @router.message(Reservation_fsm.choosing_time)
 async def day_chosen_incorrectly(message: Message):
     await message.answer(
@@ -56,3 +77,20 @@ async def day_chosen_incorrectly(message: Message):
              "Пожалуйста, выберите один из слотов из списка ниже:",
         reply_markup=make_row_keyboard(available_time)
     )
+
+
+@router.message(
+    Reservation_fsm.acceptance,
+    F.text.in_(agreement)
+)
+async def final_reservation(message: Message, state: FSMContext):
+    await state.update_data(chosen_time=message.text.lower())
+    user_data = await state.get_data()
+    # Логика резервации места
+    await message.answer(
+        text=f"Время успешно забронировано\!",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await message.answer('`' + str(tt.get_timetable_pretty()) + '`',
+                         reply_markup=get_timetable())
+    await state.clear()

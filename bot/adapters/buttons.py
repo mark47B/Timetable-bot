@@ -16,8 +16,8 @@ class GetTimetableCallbackFactory(CallbackData, prefix='get_timetable'):
 
 available_days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
 available_days_short = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']
-available_time = ['18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-22:00']
-
+available_time = ['18:00\-19:00', '19:00\-20:00', '20:00\-21:00', '21:00\-22:00']
+agreement = ['Да', 'Нет']
 
 def make_row_keyboard(items: list[str] = available_days_short) -> ReplyKeyboardMarkup:
     """
