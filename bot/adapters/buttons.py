@@ -16,8 +16,9 @@ class GetTimetableCallbackFactory(CallbackData, prefix='get_timetable'):
 
 available_days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
 available_days_short = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ']
-available_time = ['18:00\-19:00', '19:00\-20:00', '20:00\-21:00', '21:00\-22:00']
+available_time = ['18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-22:00']
 agreement = ['Да', 'Нет']
+
 
 def make_row_keyboard(items: list[str] = available_days_short) -> ReplyKeyboardMarkup:
     """
@@ -37,11 +38,3 @@ def get_timetable() -> InlineKeyboardMarkup:
     builder.adjust(3)
     return builder.as_markup()
 
-
-def get_days_inline() -> InlineKeyboardMarkup:
-    btn_days = [InlineKeyboardButton(text=day, callback_data='get_day'+num) for num, day in enumerate(available_days)]
-    return InlineKeyboardMarkup().add(*btn_get_days)
-
-def get_time_inline() -> InlineKeyboardMarkup:
-    btn_time = [InlineKeyboardButton(text=day, callback_data='get_time'+num) for num, day in enumerate(available_time)]
-    InlineKeyboardMarkup().add(*btn_time)

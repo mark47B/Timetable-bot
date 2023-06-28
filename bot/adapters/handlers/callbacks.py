@@ -14,14 +14,11 @@ from ..buttons import GetTimetableCallbackFactory
 
 router = Router()
 
-
 @router.callback_query(GetTimetableCallbackFactory.filter())
 async def callbacks_get_timetable(
         callback: types.CallbackQuery,
         callback_data: GetTimetableCallbackFactory
-):  
-    if callback_data.day is None:
-        await callback.message.answer('`' + str(tt.get_timetable_pretty()) + '`', reply_markup=get_timetable())
-    else:
-        await callback.message.answer('`' + str(tt.get_timetable_pretty(int(callback_data.day))) + '`', reply_markup=get_timetable())
-
+):
+    day =  int(callback_data.day) if callback_data.day is not None else None
+    await callback.message.answer(str(tt.get_timetable_pretty(day)), reply_markup=get_timetable())
+    await callback.answer()

@@ -3,6 +3,7 @@ from pydantic import BaseSettings, SecretStr
 
 class Settings(BaseSettings):
     BOT_TOKEN: SecretStr
+    EXCEL_PATH: str
 
     class Config:
         env_file = '../.env'
