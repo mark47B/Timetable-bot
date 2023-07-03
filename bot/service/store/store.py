@@ -147,14 +147,13 @@ class GoogleSheet_interactions:
 
 
     def put(self, data: str, position: tuple[str, str]):
-        results = self.service.spreadsheets().values().batchUpdate(spreadsheetId = spreadsheetId, body = {
+        results = self.service.spreadsheets().values().batchUpdate(spreadsheetId = self.spreadsheetId, body = {
         "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
         "data": [
-            {"range": "Лист номер один!B2:D5",
+            {"range": f"Лист 1!{position[0]}{position[1]}",
             "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
             "values": [
-                        ["Ячейка B2", "Ячейка C2", "Ячейка D2"], # Заполняем первую строку
-                        ['25', "=6*6", "=sin(3,14/2)"]  # Заполняем вторую строку
+                        [data, ]
                     ]}
         ]
         }).execute()
