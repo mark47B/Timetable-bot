@@ -1,5 +1,5 @@
 from openpyxl import load_workbook, worksheet
-from service.store import Excel_interactions
+from service.store import Excel_interactions, GoogleSheet_interactions
 from core.entities import ProfileLink
 from config import config
 
@@ -12,6 +12,7 @@ available_time = ['18:00-19:00', '19:00-20:00', '20:00-21:00', '21:00-22:00']
 
 
 INTERACT_WITH_DB = Excel_interactions(config.EXCEL_PATH)
+# INTERACT_WITH_DB = GoogleSheet_interactions(CREDENTIALS_FILE=config.SERVICE_ACCOUNT_CREDENTIALS_PATH, spreadsheetId=config.SPREADSHEET_ID)
 
 
 def get_timetable_pretty(day: int = None) -> str:
