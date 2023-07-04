@@ -4,7 +4,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters.command import Command
 from aiogram.types import Message
 from adapters.buttons import make_row_keyboard, available_days, available_time, agreement
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
+from aiogram import types
 from aiogram.types import ReplyKeyboardRemove
 
 from core.timetable import days_nums
@@ -21,6 +23,9 @@ class Reservation_fsm(StatesGroup):
     day_selection = State()
     time_selection = State()
     acceptance = State()
+    contact_sharing = State()
+    tg_sharing = State()
+    vk_sharing = State()
 
     async def clear(self) -> None:
         await self.set_state(state=None)
@@ -46,7 +51,7 @@ async def select_day(message: Message, state: FSMContext):
     await state.update_data(day=message.text.lower())
     user_data = await state.get_data()
     await message.answer(
-        text=f"Вы выбрали '{user_data['day']}'. Спасибо. Теперь, пожалуйста, выберите время",
+        text=f"Вы выбрали '{user_data['day']}'. Спасибо. Сейчас, пожалуйста, выберите время",
         reply_markup=make_row_keyboard(available_time)
     )
     await state.set_state(Reservation_fsm.time_selection)
@@ -66,22 +71,58 @@ async def incorrect_day(message: Message):
     F.text.in_(available_time)
 )
 async def select_time(message: Message, state: FSMContext):
+    builder = ReplyKeyboardBuilder()
+    builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
+    
     await state.update_data(time=message.text.lower())
     user_data = await state.get_data()
     await message.answer(
-        text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'. Бронируем?",
-        reply_markup=make_row_keyboard(agreement)
+        text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'.\n"
+              "Сейчас, пожалуйста, поделитесь контактом в Telegram",
+              reply_markup=builder.as_markup(resize_keyboard=True)
     )
-    await state.set_state(Reservation_fsm.acceptance)
+    await state.set_state(Reservation_fsm.contact_sharing)
 
 
 @router.message(Reservation_fsm.time_selection)
 async def incorrect_time(message: Message):
     await message.answer(
         text="Неправильный формат времени! \n\n"
-             "Пожалуйста, выберите один из слотов из списка ниже:",
+             "Пожалуйста, выберите один из слотов из списка ниже",
         reply_markup=make_row_keyboard(available_time)
     )
+
+
+# Handler for contact sharing
+@router.message(
+    Reservation_fsm.contact_sharing,
+)
+async def select_contact(message: Message, state: FSMContext):
+    if not message.contact.user_id == message.from_user.id:
+        builder = ReplyKeyboardBuilder()
+        builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
+        await message.answer(text='Отправьте, пожалуйста, Ваш контакт', reply_markup=builder.as_markup(resize_keyboard=True))
+    else:
+        user_data = await state.get_data()
+        await message.answer(
+            text=f"<b>Вы выбрали день:</b> {user_data['day']}\n"
+                 f"<b>Время:</b> {user_data['time']} \n"
+                 f"<b>Telegram profile:</b> <a href=\"tg://user?id={message.contact.user_id}\">{message.from_user.full_name}</a>.\n\n"
+                 "<b>Бронируем?</b>",
+            reply_markup=make_row_keyboard(agreement)
+        )
+        await state.set_state(Reservation_fsm.acceptance)
+
+
+# @router.message(Reservation_fsm.contact_sharing)
+# async def incorrect_day(message: Message):
+#     builder = ReplyKeyboardBuilder()
+#     builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
+#     await message.answer(
+#         text="Пожалуйста, поделитесь контактом Telegram, чтобы другие музыканты могли с Вами связаться 📲",
+#         request_contact=True,
+#         reply_markup=builder.as_markup(resize_keyboard=True)
+#     )
 
 
 @router.message(
