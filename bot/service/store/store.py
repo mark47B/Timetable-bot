@@ -31,13 +31,13 @@ class Excel_interactions:
             row_as_lst = list()
             for n, cell in enumerate(row):
                 if day is None or (day == n and day is not None):
-                    if "<a" in cell.value:
+                    if "tg_userId=" in cell.value:
 
                         row_as_lst.append(
                             ProfileLink(
                             **{
-                                'id': cell.value.split('id=')[1].split('"')[0],
-                                'fullname': cell.value.split('</a>')[0].split('">')[1]
+                                'id': cell.split("tg_userId='")[1].split("'")[0],
+                                'fullname': cell.split("tg_userId='")[1].split("'")[2]
                             }))
                     else:
                         row_as_lst.append(cell.value)
@@ -45,11 +45,11 @@ class Excel_interactions:
 
         return timetable_cells
 
-    def put(self, data, position: tuple[str, str]) -> worksheet:
+    def put(self, data: ProfileLink, position: tuple[str, str]) -> worksheet:
         timetable_wb = self.write_xlsx()
         timetable_sheet = timetable_wb['Лист1']
 
-        timetable_sheet[position[0] + position[1]] = data
+        timetable_sheet[position[0] + position[1]] = f"tg_userId='{data.id}';tg_fullName='{data.fullname}'"
         timetable_wb.save(self.path)
         return timetable_sheet
 
@@ -126,34 +126,32 @@ class GoogleSheet_interactions:
                                             ranges = ranges,
                                             dateTimeRenderOption = 'FORMATTED_STRING').execute()
         sheet_values = results['valueRanges'][0]['values']
-
         timetable_cells = list()
         for row in sheet_values:
             row_as_lst = list()
-            for n, cell in enumerate(row):
-                if "<a" in cell:
-
+            for cell in row:
+                if "tg_userId=" in cell:
+                    # tg_userId='';tg_fullName='';
                     row_as_lst.append(
                         ProfileLink(
                         **{
-                            'id': cell.split('id=')[1].split('"')[0],
-                            'fullname': cell.split('</a>')[0].split('">')[1]
-                        }))
+                            'id': cell.split("tg_userId='")[1].split("'")[0],
+                            'fullname': cell.split("tg_userId='")[1].split("'")[2]
+                          }))
                 else:
                     row_as_lst.append(cell)
             timetable_cells.append(row_as_lst)
-
         return timetable_cells
 
 
-    def put(self, data: str, position: tuple[str, str]):
+    def put(self, data: ProfileLink, position: tuple[str, str]):
         results = self.service.spreadsheets().values().batchUpdate(spreadsheetId = self.spreadsheetId, body = {
         "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
         "data": [
             {"range": f"Лист 1!{position[0]}{position[1]}",
             "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
             "values": [
-                        [data, ]
+                        [f"tg_userId='{data.id}';tg_fullName='{data.fullname}'", ]
                     ]}
         ]
         }).execute()

@@ -16,6 +16,9 @@ from ..buttons import get_timetable
 
 from config import config
 
+from core.entities import ProfileLink
+
+
 router = Router()
 
 
@@ -103,6 +106,7 @@ async def select_contact(message: Message, state: FSMContext):
         builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
         await message.answer(text='Отправьте, пожалуйста, Ваш контакт', reply_markup=builder.as_markup(resize_keyboard=True))
     else:
+        await state.update_data(user_id=message.contact.user_id)
         user_data = await state.get_data()
         await message.answer(
             text=f"<b>Вы выбрали день:</b> {user_data['day']}\n"
@@ -141,7 +145,10 @@ async def final_reservation(message: Message, state: FSMContext):
         pos = (day_to_letter[user_data['day']], time_to_number[user_data['time']])
 
         user_data = await state.get_data()
-        timetable_xlsx.put(data=f'</code><a href="tg://user?id={message.from_user.id}">{message.from_user.full_name}</a><code>', position=pos)
+        profile = ProfileLink(**{'id': user_data['user_id'],
+                                 'fullname': message.from_user.full_name
+                                 })
+        timetable_xlsx.put(data=profile, position=pos)
         await message.answer(
             text=f"Время успешно забронировано!",
             reply_markup=ReplyKeyboardRemove()
