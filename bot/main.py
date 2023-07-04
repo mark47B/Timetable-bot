@@ -5,6 +5,7 @@ from commands import set_default_commands
 from loader import dp, bot
 
 import adapters.FSMs.Reservation as Reservation
+import adapters.FSMs.Free_slot as Free_slot
 import adapters.FSMs.common as common
 import adapters.handlers.handlers as handlers
 import adapters.handlers.callbacks as callbacks
@@ -32,9 +33,10 @@ async def main():
     await set_default_commands(bot)
     await bot.delete_webhook(drop_pending_updates=True)
     dp.include_router(common.router)
+    dp.include_router(Free_slot.router)
     dp.include_router(Reservation.router)
     dp.include_router(handlers.router)
-    dp.include_router(callbacks.router)    
+    dp.include_router(callbacks.router)
 
     logger.info("bot started")
     await dp.start_polling(bot)

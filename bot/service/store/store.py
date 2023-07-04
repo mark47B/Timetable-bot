@@ -59,6 +59,7 @@ class GoogleSheet_interactions:
     service: apiclient
     credentials: SecretStr
 
+    # Nice to be use aiogoogle for async requests
     def __init__(self, CREDENTIALS_FILE: str, spreadsheetId: str):
         self.spreadsheetId = spreadsheetId
 
@@ -145,13 +146,18 @@ class GoogleSheet_interactions:
 
 
     def put(self, data: ProfileLink, position: tuple[str, str]):
+        if data is None:
+            data = 'Not Reserved'
+        else:
+            data = f"tg_userId='{data.id}';tg_fullName='{data.fullname}'"
+        
         results = self.service.spreadsheets().values().batchUpdate(spreadsheetId = self.spreadsheetId, body = {
         "valueInputOption": "USER_ENTERED", # Данные воспринимаются, как вводимые пользователем (считается значение формул)
         "data": [
             {"range": f"Лист 1!{position[0]}{position[1]}",
             "majorDimension": "ROWS",     # Сначала заполнять строки, затем столбцы
             "values": [
-                        [f"tg_userId='{data.id}';tg_fullName='{data.fullname}'", ]
+                        [data, ]
                     ]}
         ]
         }).execute()
