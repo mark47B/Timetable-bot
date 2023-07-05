@@ -31,21 +31,22 @@ def get_timetable_pretty(day: int = None) -> str:
     fields = ['Время']
     fields += available_days if day is None else [available_days[day]]
 
-    for column in fields:
-        prettyTimetable += f'{column:{max(max_columns)+1}}'
+    for n, column in enumerate(fields):
+        prettyTimetable += f'{column:{max_columns[n]+1}}'
     prettyTimetable += '\n'
     # Head and body separator
-    prettyTimetable += f'{"="*max(max_columns)*(len(fields)+1)}'
+    prettyTimetable += f'{"="*sum(max_columns) + "="*5}'
     # Body of timetable
     prettyTimetable += '\n'
     for el in timetable:
-        for cell in el:
+        for n, cell in enumerate(el):
             if type(cell) == type(ProfileLink(id='123', fullname='123')): # crutch
                 data = f'</code><a href="tg://user?id={cell.id}">{cell.fullname}</a><code>'
-                data += ' '*(max(max_columns)+1 - len(cell))
+                data += ' '*(max_columns[n] - len(cell.fullname) + 1)
                 prettyTimetable += data
+                print(prettyTimetable)
             else:
-                prettyTimetable += f'{cell:{max(max_columns)+1}}'
+                prettyTimetable += f'{cell:{max_columns[n]+1}}'
         prettyTimetable += '\n'
                 
     return '<code>' + prettyTimetable + '</code>'
