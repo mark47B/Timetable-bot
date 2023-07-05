@@ -54,7 +54,7 @@ async def select_day(message: Message, state: FSMContext):
     await state.update_data(day=message.text.lower())
     user_data = await state.get_data()
     await message.answer(
-        text=f"Вы выбрали '{user_data['day']}'. Спасибо. Сейчас, пожалуйста, выберите время",
+        text=f"Вы выбрали '{user_data['day']}'. Спасибо.\n<b>Сейчас, пожалуйста, выберите время</b>",
         reply_markup=make_row_keyboard(available_time)
     )
     await state.set_state(Reservation_fsm.time_selection)
@@ -63,7 +63,7 @@ async def select_day(message: Message, state: FSMContext):
 @router.message(Reservation_fsm.day_selection)
 async def incorrect_day(message: Message):
     await message.answer(
-        text="Некорректный формат дня недели!  \n\n"
+        text="<b>Некорректный формат дня недели!</b> \n\n"
              "Пожалуйста, выберите день из списка ниже:",
         reply_markup=make_row_keyboard(available_days)
     )
@@ -81,7 +81,7 @@ async def select_time(message: Message, state: FSMContext):
     user_data = await state.get_data()
     await message.answer(
         text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'.\n"
-              "Сейчас, пожалуйста, поделитесь контактом в Telegram",
+              "<b>Сейчас поделитесь Вашим контактом в Telegram</b>",
               reply_markup=builder.as_markup(resize_keyboard=True)
     )
     await state.set_state(Reservation_fsm.contact_sharing)
@@ -91,7 +91,7 @@ async def select_time(message: Message, state: FSMContext):
 async def incorrect_time(message: Message):
     await message.answer(
         text="Неправильный формат времени! \n\n"
-             "Пожалуйста, выберите один из слотов из списка ниже",
+             "<b>Выберите один из слотов из списка ниже<b>",
         reply_markup=make_row_keyboard(available_time)
     )
 
