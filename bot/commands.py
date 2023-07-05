@@ -7,6 +7,7 @@ async def set_default_commands(bot: Bot) -> None:
         [
             # BotCommand(command="help", description="help"),
             BotCommand(command="start", description="Начать"),
+            BotCommand(command="info", description="Информация о репетиционной точке"),
             BotCommand(command="reserve", description="Забронировать"),
             BotCommand(command="free_my_slots", description="Освободить все мои слоты"),
             BotCommand(command="cancel", description="Отмена"),

@@ -44,7 +44,6 @@ def get_timetable_pretty(day: int = None) -> str:
                 data = f'</code><a href="tg://user?id={cell.id}">{cell.fullname}</a><code>'
                 data += ' '*(max_columns[n] - len(cell.fullname) + 1)
                 prettyTimetable += data
-                print(prettyTimetable)
             else:
                 prettyTimetable += f'{cell:{max_columns[n]+1}}'
         prettyTimetable += '\n'
