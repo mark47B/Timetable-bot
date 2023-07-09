@@ -12,7 +12,7 @@ from aiogram.types import ReplyKeyboardRemove
 from core.timetable import days_nums
 from service.store import Excel_interactions, GoogleSheet_interactions
 import core.timetable as tt
-from ..buttons import get_timetable
+from ..buttons import get_timetable, get_commands, capital_first
 
 from config import config
 
@@ -78,15 +78,28 @@ async def incorrect_day(message: Message):
 async def select_time(message: Message, state: FSMContext):
     builder = ReplyKeyboardBuilder()
     builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
-    
+
     await state.update_data(time=message.text.lower())
     user_data = await state.get_data()
-    await message.answer(
-        text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'.\n"
-              "<b>Сейчас поделитесь Вашим контактом в Telegram</b>",
-              reply_markup=builder.as_markup(resize_keyboard=True)
-    )
-    await state.set_state(Reservation_fsm.contact_sharing)
+
+    # Реализация запрета бронирования уже занятого места
+    dict_with_free_slots = tt.searching_free_slots()
+    if capital_first(user_data['day']) in dict_with_free_slots.keys() and user_data['time'] in dict_with_free_slots[capital_first(user_data['day'])] :
+        await message.answer(
+            text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'.\n"
+                "<b>Сейчас поделитесь Вашим контактом в Telegram</b>",
+                reply_markup=builder.as_markup(resize_keyboard=True)
+        )
+        await state.set_state(Reservation_fsm.contact_sharing)
+    else:
+        await message.answer(
+            text=f"Вы выбрали занятый слот: '{user_data['day']}' и время '{user_data['time']}'.\n"
+                "<b>Пожалуйста, выберите другой слот</b>",
+                reply_markup=make_row_keyboard(available_days)
+        )
+        await state.clear()
+        await state.set_state(Reservation_fsm.day_selection)
+
 
 
 @router.message(Reservation_fsm.time_selection)
@@ -153,16 +166,15 @@ async def final_reservation(message: Message, state: FSMContext):
         timetable_xlsx.put(data=profile, position=pos)
         await message.answer(
             text=f"Время успешно забронировано!",
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=get_commands()
         )
-        await message.answer(tt.get_timetable_pretty(), reply_markup=get_timetable())
 
-    if message.text.lower() =='нет':
+    if message.text.lower() == 'нет':
         await message.answer(
             text=f"Бронь отменена.",
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=get_commands()
         )
-        await message.answer(tt.get_timetable_pretty(), reply_markup=get_timetable())
+    await message.answer(tt.get_timetable_pretty(), reply_markup=get_timetable())
     await state.clear()
 
 

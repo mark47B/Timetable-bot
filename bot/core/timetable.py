@@ -51,10 +51,9 @@ def get_timetable_pretty(day: int = None) -> str:
     return '<code>' + prettyTimetable + '</code>'
 
 
-def get_free_slots() -> str: # Should be decompouse
+def searching_free_slots() -> dict:
     whole_timetable = INTERACT_WITH_DB.extract()
 
-    # Searching free slots
     free_slots = dict()
     for number_row, row in enumerate(whole_timetable):
         for number_column, cell in enumerate(row):
@@ -63,6 +62,13 @@ def get_free_slots() -> str: # Should be decompouse
                     free_slots[available_days[number_column]] += [available_time[number_row] ]
                 else:
                     free_slots[available_days[number_column]] = [available_time[number_row] ]
+    return free_slots
+
+
+def get_free_slots() -> str: # Should be decompouse
+
+    # Searching free slots
+    free_slots = searching_free_slots()
     
     # Construct pretty view
     
