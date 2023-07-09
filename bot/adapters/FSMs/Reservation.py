@@ -16,7 +16,7 @@ from ..buttons import get_timetable
 
 from config import config
 
-from core.entities import ProfileLink
+from core.entities import ProfileLink, GENERAL_FUNCTIONALITY
 
 
 router = Router()
@@ -43,6 +43,8 @@ async def entrypoint(message: Message, state: FSMContext):
         reply_markup=make_row_keyboard(available_days)
     )
     await state.set_state(Reservation_fsm.day_selection)
+ # Additional options for calling 'Reservation'   
+router.message.register(entrypoint, F.text.in_(GENERAL_FUNCTIONALITY['reserve']))
 
 
 # Handler for day selection

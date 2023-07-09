@@ -7,7 +7,10 @@ from config import config
 from service.store import GoogleSheet_interactions
 from aiogram.types import Message, ReplyKeyboardRemove
 
-from core.entities import ProfileLink
+import core.timetable as tt
+from core.entities import ProfileLink, GENERAL_FUNCTIONALITY
+from ..buttons import get_timetable
+from adapters.FSMs.common import cmd_cancel
 
 
 router = Router()
@@ -30,10 +33,13 @@ async def entrypoint(message: Message, state: FSMContext):
     )
     await state.set_state(Free_slot_FSM.acceptance)
 
+# Additional options for calling 'Reservation'   
+router.message.register(entrypoint, F.text.in_(GENERAL_FUNCTIONALITY['free_my_slots']))
+
 
 @router.message(
     Free_slot_FSM.acceptance,
-    F.text.in_(agreement)
+    F.text.in_(agreement[0])
 )
 async def free_slots(message: Message, state: FSMContext):
     user_data = await state.get_data()
@@ -48,7 +54,11 @@ async def free_slots(message: Message, state: FSMContext):
         text=f"Ваши слоты успешно очищены",
               reply_markup=ReplyKeyboardRemove()
     )
+    await message.answer(tt.get_timetable_pretty(), reply_markup=get_timetable())
+
     await state.clear()
+
+router.message.register(cmd_cancel, Free_slot_FSM.acceptance, F.text.in_(agreement[1]))
 
 
 @router.message(Free_slot_FSM.acceptance)

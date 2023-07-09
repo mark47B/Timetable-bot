@@ -51,6 +51,47 @@ def get_timetable_pretty(day: int = None) -> str:
     return '<code>' + prettyTimetable + '</code>'
 
 
+def get_free_slots() -> str: # Should be decompouse
+    whole_timetable = INTERACT_WITH_DB.extract()
+
+    # Searching free slots
+    free_slots = dict()
+    for number_row, row in enumerate(whole_timetable):
+        for number_column, cell in enumerate(row):
+            if cell == 'Not Reserved':
+                if available_days[number_column] in free_slots.keys():
+                    free_slots[available_days[number_column]] += [available_time[number_row] ]
+                else:
+                    free_slots[available_days[number_column]] = [available_time[number_row] ]
+    
+    # Construct pretty view
+    
+    prettyTimetable = str()
+    fields = ['День', 'Время']
+    column_width = 13
+    for column in fields:
+        prettyTimetable += f'{column:{column_width}}'
+    prettyTimetable += '\n'
+    # Head and body separator
+    prettyTimetable += f'{"="*(len(fields)*column_width) + "="*3}'
+
+    # Body of timetable
+    prettyTimetable += '\n'
+    for k, v in free_slots.items():
+        prettyTimetable += f'{k:{column_width}}' 
+        for time_ in v[:-1]:
+            prettyTimetable += f'{time_:{column_width}}'
+            prettyTimetable += '\n'
+            prettyTimetable += ' '*column_width
+        prettyTimetable += f'{v[-1]:{column_width}}'
+
+        prettyTimetable += '\n'
+        prettyTimetable += f'{"-"*(len(fields)*column_width) + "-"*3}'
+        prettyTimetable += '\n'
+
+    return '<code>' + prettyTimetable + '</code>'
+
+
 def put_cell_into_timetable(message: str, position: tuple[str, str]) -> bool:
     INTERACT_WITH_DB.put(message, position)
     return False

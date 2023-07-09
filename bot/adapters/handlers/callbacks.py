@@ -19,6 +19,9 @@ async def callbacks_get_timetable(
         callback: types.CallbackQuery,
         callback_data: GetTimetableCallbackFactory
 ):
-    day =  int(callback_data.day) if callback_data.day is not None else None
-    await callback.message.answer(str(tt.get_timetable_pretty(day)), reply_markup=get_timetable())
+    day = int(callback_data.day) if callback_data.day is not None else None
+    if day is None:
+        await callback.message.answer(str(tt.get_free_slots()), reply_markup=get_timetable())
+    else:
+        await callback.message.answer(str(tt.get_timetable_pretty(day)), reply_markup=get_timetable())
     await callback.answer()
