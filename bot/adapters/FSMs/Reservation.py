@@ -114,6 +114,7 @@ async def incorrect_time(message: Message):
 # Handler for contact sharing
 @router.message(
     Reservation_fsm.contact_sharing,
+    F.contact
 )
 async def select_contact(message: Message, state: FSMContext):
     if not message.contact.user_id == message.from_user.id:
