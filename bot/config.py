@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     SERVICE_ACCOUNT_CREDENTIALS_PATH: str
     SPREADSHEET_ID: str
 
-    POSTGRES_DB: str
+    POSTGRES_DB_NAME: str
     POSTGRES_PASSWORD: SecretStr
     POSTGRES_USER: str
 
-    REDIS_HOST: str
+    REDIS_HOSTS: str
     REDIS_PORT: str
     REDIS_PASSWORD: SecretStr
 
