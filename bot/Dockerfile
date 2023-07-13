@@ -6,5 +6,4 @@ RUN poetry config virtualenvs.create false && poetry install -n --no-ansi --only
 COPY .env /app/.env
 COPY secrets/ /app/secrets
 COPY . /app/bot
-RUN ls -a
 CMD ["poetry", "run", "python3.10", "main.py" ]
