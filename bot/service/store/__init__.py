@@ -1,1 +1,2 @@
-from .store import Excel_interactions, GoogleSheet_interactions
+from .google_sheets import GoogleSheet_interactions
+from .local_excel_file import Excel_interactions

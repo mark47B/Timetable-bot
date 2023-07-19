@@ -7,7 +7,6 @@ from aiogram.types import KeyboardButton
 
 from core.entities import GENERAL_FUNCTIONALITY, AVAILABLE_DAYS, AVAILABLE_DAYS_SHORT
 
-# Создание кнопок это представление, поэтому нужно вынести во view (да и создать такой модуль)
 
 class GetTimetableCallbackFactory(CallbackData, prefix='get_timetable'):
     day: Optional[int]
@@ -17,7 +16,7 @@ def make_capital_first(word: str):
     return chr(ord(word[0])-32) + word[1:]
 
 
-def make_two_columns_keyboard(items: list[str] = [com[0] for com in GENERAL_FUNCTIONALITY.values()]) -> ReplyKeyboardMarkup:
+def make_two_columns_keyboard(items: list[str]) -> ReplyKeyboardMarkup:
     """
     Creating reply keyboard with two columns of buttons
     """

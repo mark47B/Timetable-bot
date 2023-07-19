@@ -1,10 +1,10 @@
 from aiogram import Router
 from aiogram.filters import Command, Text
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message
 
-from ..buttons import get_timetable
-
+from view.buttons import make_two_columns_keyboard
+from core.entities import GENERAL_FUNCTIONALITY
 
 router = Router()
 
@@ -15,5 +15,5 @@ async def cmd_cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         text="Действие отменено",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=make_two_columns_keyboard([command[0] for command in GENERAL_FUNCTIONALITY.values()])
     )

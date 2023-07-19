@@ -1,16 +1,8 @@
-from ..buttons import get_timetable
-
-import core.timetable as tt
-
-from typing import Optional
+from view.timetable import get_pretty_free_slots, get_timetable_pretty
+from view.buttons import make_inline_buttons_for_timetable, GetTimetableCallbackFactory
 
 from aiogram import types, Router
-from aiogram.filters.callback_data import CallbackData
-from aiogram.filters.text import Text
 
-from loader import bot, dp
-
-from ..buttons import GetTimetableCallbackFactory
 
 router = Router()
 
@@ -21,7 +13,7 @@ async def callbacks_get_timetable(
 ):
     day = int(callback_data.day) if callback_data.day is not None else None
     if day is None:
-        await callback.message.answer(str(tt.get_free_slots()), reply_markup=get_timetable())
+        await callback.message.answer(get_pretty_free_slots(), reply_markup=make_inline_buttons_for_timetable())
     else:
-        await callback.message.answer(str(tt.get_timetable_pretty(day)), reply_markup=get_timetable())
+        await callback.message.answer(get_timetable_pretty(day), reply_markup=make_inline_buttons_for_timetable(), disable_web_page_preview=True)
     await callback.answer()

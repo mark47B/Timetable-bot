@@ -19,10 +19,9 @@ def calc_max_len_of_string_in_list(items: list[str]):
 
 
 def make_excellent_table(fields, data, row_sep=None) -> str:
-    # Creating an aligned table 
+    # Creating an aligned table
     table = str()
-
-    max_column_len = calc_max_len_of_string_in_list(fields + data)
+    max_column_len = calc_max_len_of_string_in_list([fields] + data)
 
     # Head of table
     for n, column in enumerate(fields):
@@ -30,11 +29,16 @@ def make_excellent_table(fields, data, row_sep=None) -> str:
     table += '\n'
 
     # Separator between Head and body
-    table += f'{"="*sum(max_column_len) + "="*5}'
-    table += '\n'
+    if row_sep is None:
+        table += f'{"="*sum(max_column_len) + "="*5}'
+        table += '\n'
+
 
     # Body of timetable
     for el in data:
+        if row_sep is not None and len(el[0]) != 0:
+            table += f'{row_sep*sum(max_column_len) + row_sep*5}'
+            table += '\n'
         for n, cell in enumerate(el):
             if isinstance(cell, ProfileLink):
                 excellent_cell = f'</code>{str(cell)}<code>' # Close visual block, insert link to person and close
@@ -42,9 +46,7 @@ def make_excellent_table(fields, data, row_sep=None) -> str:
                 table += excellent_cell
             else:
                 table += f'{cell:{max_column_len[n]+1}}'
-        if row_sep is not None:
-            table += '\n'
-            table += f'{row_sep*sum(max_column_len) + row_sep*5}'
+        
         table += '\n'
     return '<code>' + table + '</code>'
 

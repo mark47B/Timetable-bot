@@ -1,16 +1,12 @@
 from aiogram import types, Router
-
-
-
-from aiogram import types
 from aiogram.filters import Command
 
 from aiogram import F
 
 
 from core.entities import GENERAL_FUNCTIONALITY
-import core.timetable as tt
-from ..buttons import get_commands, get_timetable
+from view.timetable import get_timetable_pretty, get_pretty_free_slots
+from view.buttons import make_inline_buttons_for_timetable, make_two_columns_keyboard
 
 
 router = Router()
@@ -30,7 +26,7 @@ async def process_start_command(message: types.Message):
                          "       <i>Зарезервировать слот:</i> /reserve \n"
                          "       <i>Освободить все свои слоты:</i> /free_my_slots \n"
                          "       <i>Отмена текущей операции:</i> /cancel \n\n",
-                         reply_markup=get_commands())
+                         reply_markup=make_two_columns_keyboard([command[0] for command in GENERAL_FUNCTIONALITY.values()]))
 
 
 @router.message(Command("info"))
@@ -55,16 +51,16 @@ async def process_info_command(message: types.Message):
                          "       <b>Отключить все сетевые фильтры</b> \n"
                          "       <b>Выключить свет</b> \n"
                          ,
-                         reply_markup=get_commands())
+                         reply_markup=make_two_columns_keyboard([command[0] for command in GENERAL_FUNCTIONALITY.values()]))
 router.message.register(process_info_command, F.text.in_(GENERAL_FUNCTIONALITY['info']))
 
 
 @router.message(F.text.in_(GENERAL_FUNCTIONALITY['timetable']))
 async def get_full_timetable(message: types.Message):
-    await message.answer(str(tt.get_timetable_pretty()), reply_markup=get_timetable())
+    await message.answer(get_timetable_pretty(), reply_markup=make_inline_buttons_for_timetable(), disable_web_page_preview=True)
 
 
 @router.message(Command("check_free_slots"))
 async def check_free_slots(message: types.Message):
-    await message.answer(tt.get_free_slots(), reply_markup=get_timetable())
+    await message.answer(get_pretty_free_slots(), reply_markup=make_inline_buttons_for_timetable())
 router.message.register(check_free_slots, F.text.in_(GENERAL_FUNCTIONALITY['check_free_slots']))

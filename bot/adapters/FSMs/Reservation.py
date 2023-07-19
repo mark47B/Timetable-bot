@@ -3,21 +3,15 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.filters.command import Command
 from aiogram.types import Message
-from adapters.buttons import make_row_keyboard, available_days, available_time, agreement
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import KeyboardButton
 
-from aiogram import types
-from aiogram.types import ReplyKeyboardRemove
-
-from core.timetable import days_nums
+from core.entities import AVAILABLE_DAYS, AVAILABLE_TIME, ProfileLink, GENERAL_FUNCTIONALITY, convert_day_to_column_letter, convert_time_to_row_number
+from view.timetable import get_pretty_free_slots, get_timetable_pretty
+from view.buttons import make_row_keyboard, make_two_columns_keyboard, make_capital_first, make_inline_buttons_for_timetable
 from service.store import Excel_interactions, GoogleSheet_interactions
-import core.timetable as tt
-from ..buttons import get_timetable, get_commands, capital_first
 
 from config import config
-
-from core.entities import ProfileLink, GENERAL_FUNCTIONALITY
-
 
 router = Router()
 
@@ -40,24 +34,24 @@ class Reservation_fsm(StatesGroup):
 async def entrypoint(message: Message, state: FSMContext):
     await message.answer(
         text="Выберите день ",
-        reply_markup=make_row_keyboard(available_days)
+        reply_markup=make_row_keyboard(AVAILABLE_DAYS)
     )
     await state.set_state(Reservation_fsm.day_selection)
- # Additional options for calling 'Reservation'   
+# Additional options for calling 'Reservation'
 router.message.register(entrypoint, F.text.in_(GENERAL_FUNCTIONALITY['reserve']))
 
 
 # Handler for day selection
 @router.message(
     Reservation_fsm.day_selection,
-    F.text.in_(available_days)
+    F.text.in_(AVAILABLE_DAYS)
 )
 async def select_day(message: Message, state: FSMContext):
     await state.update_data(day=message.text.lower())
     user_data = await state.get_data()
     await message.answer(
         text=f"Вы выбрали '{user_data['day']}'. Спасибо.\n<b>Сейчас, пожалуйста, выберите время</b>",
-        reply_markup=make_row_keyboard(available_time)
+        reply_markup=make_row_keyboard(AVAILABLE_TIME)
     )
     await state.set_state(Reservation_fsm.time_selection)
 
@@ -67,35 +61,35 @@ async def incorrect_day(message: Message):
     await message.answer(
         text="<b>Некорректный формат дня недели!</b> \n\n"
              "Пожалуйста, выберите день из списка ниже:",
-        reply_markup=make_row_keyboard(available_days)
+        reply_markup=make_row_keyboard(AVAILABLE_DAYS)
     )
 
 
 @router.message(
     Reservation_fsm.time_selection,
-    F.text.in_(available_time)
+    F.text.in_(AVAILABLE_TIME)
 )
 async def select_time(message: Message, state: FSMContext):
-    builder = ReplyKeyboardBuilder()
-    builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
-
     await state.update_data(time=message.text.lower())
     user_data = await state.get_data()
 
-    # Реализация запрета бронирования уже занятого места
-    dict_with_free_slots = tt.searching_free_slots()
-    if capital_first(user_data['day']) in dict_with_free_slots.keys() and user_data['time'] in dict_with_free_slots[capital_first(user_data['day'])] :
+    # Decline reservation for reserved slot
+    INTERACT_WITH_DB = GoogleSheet_interactions(CREDENTIALS_FILE=config.SERVICE_ACCOUNT_CREDENTIALS_PATH, spreadsheetId=config.SPREADSHEET_ID)
+    dict_with_free_slots = INTERACT_WITH_DB.get_free_slots()
+    if make_capital_first(user_data['day']) in dict_with_free_slots.keys() and user_data['time'] in dict_with_free_slots[make_capital_first(user_data['day'])] :
+        builder = ReplyKeyboardBuilder()
+        builder.row(KeyboardButton(text="Отправить Telegram профиль", request_contact=True))
         await message.answer(
             text=f"Вы выбрали день '{user_data['day']}' и время '{user_data['time']}'.\n"
-                "<b>Сейчас поделитесь Вашим контактом в Telegram</b>",
-                reply_markup=builder.as_markup(resize_keyboard=True)
+                 "<b>Сейчас поделитесь Вашим контактом в Telegram</b>",
+                 reply_markup=builder.as_markup(resize_keyboard=True)
         )
         await state.set_state(Reservation_fsm.contact_sharing)
     else:
         await message.answer(
             text=f"Вы выбрали занятый слот: '{user_data['day']}' и время '{user_data['time']}'.\n"
-                "<b>Пожалуйста, выберите другой слот</b>",
-                reply_markup=make_row_keyboard(available_days)
+                 "<b>Пожалуйста, выберите другой слот</b>",
+                 reply_markup=make_row_keyboard(AVAILABLE_DAYS)
         )
         await state.clear()
         await state.set_state(Reservation_fsm.day_selection)
@@ -107,75 +101,67 @@ async def incorrect_time(message: Message):
     await message.answer(
         text="Неправильный формат времени! \n\n"
              "<b>Выберите один из слотов из списка ниже<b>",
-        reply_markup=make_row_keyboard(available_time)
+        reply_markup=make_row_keyboard(AVAILABLE_TIME)
     )
 
 
 # Handler for contact sharing
 @router.message(
     Reservation_fsm.contact_sharing,
-    F.contact
+    F.contact,
+    F.contact.user_id == F.from_user.id
 )
 async def select_contact(message: Message, state: FSMContext):
-    if not message.contact.user_id == message.from_user.id:
-        builder = ReplyKeyboardBuilder()
-        builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
-        await message.answer(text='Отправьте, пожалуйста, Ваш контакт', reply_markup=builder.as_markup(resize_keyboard=True))
-    else:
-        await state.update_data(user_id=message.contact.user_id)
-        user_data = await state.get_data()
-        await message.answer(
-            text=f"<b>Вы выбрали день:</b> {user_data['day']}\n"
-                 f"<b>Время:</b> {user_data['time']} \n"
-                 f"<b>Telegram profile:</b> <a href=\"tg://user?id={message.contact.user_id}\">{message.from_user.full_name}</a>.\n\n"
-                 "<b>Бронируем?</b>",
-            reply_markup=make_row_keyboard(agreement)
-        )
-        await state.set_state(Reservation_fsm.acceptance)
+    await state.update_data(username=message.from_user.username)
+    user_data = await state.get_data()
+    await message.answer(
+        text=f"<b>Вы выбрали день:</b> {user_data['day']}\n"
+                f"<b>Время:</b> {user_data['time']} \n"
+                f"<b>Telegram profile:</b> <a href=\"https://t.me/{message.from_user.username}\">@{message.from_user.username}</a>.\n\n"
+                "<b>Бронируем?</b>",
+        reply_markup=make_row_keyboard(['Да', 'Нет']),
+        disable_web_page_preview=True
+    )
+    await state.set_state(Reservation_fsm.acceptance)
 
 
-# @router.message(Reservation_fsm.contact_sharing)
-# async def incorrect_day(message: Message):
-#     builder = ReplyKeyboardBuilder()
-#     builder.row(types.KeyboardButton(text="Отправить  Telegram  профиль", request_contact=True))
-#     await message.answer(
-#         text="Пожалуйста, поделитесь контактом Telegram, чтобы другие музыканты могли с Вами связаться 📲",
-#         request_contact=True,
-#         reply_markup=builder.as_markup(resize_keyboard=True)
-#     )
+@router.message(Reservation_fsm.contact_sharing)
+async def incorrect_contact(message: Message):
+    builder = ReplyKeyboardBuilder()
+    builder.row(KeyboardButton(text="Отправить Telegram профиль", request_contact=True))
+    await message.answer(
+        text="Пожалуйста, поделитесь своим контактом Telegram, чтобы другие музыканты могли с Вами связаться 📲",
+        request_contact=True,
+        reply_markup=builder.as_markup(resize_keyboard=True)
+    )
 
 
 @router.message(
     Reservation_fsm.acceptance,
-    F.text.in_(agreement)
+    F.text.in_(['Да', 'Нет'])
 )
 async def final_reservation(message: Message, state: FSMContext):
     if message.text.lower() == 'да':
         user_data = await state.get_data()
         # timetable_xlsx = Excel_interactions(config.EXCEL_PATH)
-        timetable_xlsx = GoogleSheet_interactions(CREDENTIALS_FILE=config.SERVICE_ACCOUNT_CREDENTIALS_PATH, spreadsheetId=config.SPREADSHEET_ID)
-        # Translation (time, day) to excel cell (letter, number), should be decompose
-        day_to_letter= { d.lower():chr(n+66) for n, d in enumerate(available_days)}
-        time_to_number = { t:str(n+2) for n, t in enumerate(available_time) }
+        session = GoogleSheet_interactions(CREDENTIALS_FILE=config.SERVICE_ACCOUNT_CREDENTIALS_PATH, spreadsheetId=config.SPREADSHEET_ID)
 
-        pos = (day_to_letter[user_data['day']], time_to_number[user_data['time']])
+        pos = (convert_day_to_column_letter(user_data['day']), convert_time_to_row_number(user_data['time'])) # pos = (G, 5)
 
-        user_data = await state.get_data()
-        profile = ProfileLink(**{'id': user_data['user_id'],
-                                 'fullname': message.from_user.full_name
-                                 })
-        timetable_xlsx.put(data=profile, position=pos)
+        profile = ProfileLink(username=user_data['username'],
+                              fullname=message.from_user.full_name)
+        session.put(data=profile, position=pos)
         await message.answer(
             text=f"Время успешно забронировано!",
-            reply_markup=get_commands()
+            reply_markup=make_two_columns_keyboard([command[0] for command in GENERAL_FUNCTIONALITY.values()])
         )
 
     if message.text.lower() == 'нет':
         await message.answer(
             text=f"Бронь отменена.",
-            reply_markup=get_commands()
+            reply_markup=make_two_columns_keyboard([command[0] for command in GENERAL_FUNCTIONALITY.values()])
         )
-    await message.answer(tt.get_timetable_pretty(), reply_markup=get_timetable())
+    await message.answer(get_timetable_pretty(), reply_markup=make_inline_buttons_for_timetable(), disable_web_page_preview=True)
     await state.clear()
 
 
@@ -183,5 +169,5 @@ async def final_reservation(message: Message, state: FSMContext):
 async def incorrect_day(message: Message):
     await message.answer(
         text="Выберите вариант из списка ниже. Бронируем?",
-        reply_markup=make_row_keyboard(agreement)
+        reply_markup=make_row_keyboard(['Да', 'Нет'])
     )
