@@ -1,11 +1,11 @@
-from openpyxl import load_workbook, worksheet
 from service.store import GoogleSheet_interactions
-from core.entities import ProfileLink, AVAILABLE_DAYS, AVAILABLE_TIME, TELEGRAM_LINK
+from core.entities import ProfileLink, AVAILABLE_DAYS, AVAILABLE_TIME
 from config import config
 
 
 # INTERACT_WITH_DB = Excel_interactions(config.EXCEL_PATH)
 INTERACT_WITH_DB = GoogleSheet_interactions(CREDENTIALS_FILE=config.SERVICE_ACCOUNT_CREDENTIALS_PATH, spreadsheetId=config.SPREADSHEET_ID)
+SPACE_BETW_COLS = 3
 
 
 def calc_max_len_of_string_in_list(items: list[str]):
@@ -13,7 +13,7 @@ def calc_max_len_of_string_in_list(items: list[str]):
     max_column_len = list()
     for col in zip(*items):
         len_el = []
-        [len_el.append(len(el)+1) for el in col]
+        [len_el.append(len(el) + SPACE_BETW_COLS) for el in col]
         max_column_len.append(max(len_el))
     return max_column_len
 
@@ -25,14 +25,13 @@ def make_excellent_table(fields, data, row_sep=None) -> str:
 
     # Head of table
     for n, column in enumerate(fields):
-        table += f'{column:{max_column_len[n]+1}}'
+        table += f'{column:{max_column_len[n]}}'
     table += '\n'
 
     # Separator between Head and body
     if row_sep is None:
-        table += f'{"="*sum(max_column_len) + "="*5}'
+        table += f'{"="*sum(max_column_len)}'
         table += '\n'
-
 
     # Body of timetable
     for el in data:
@@ -42,10 +41,10 @@ def make_excellent_table(fields, data, row_sep=None) -> str:
         for n, cell in enumerate(el):
             if isinstance(cell, ProfileLink):
                 excellent_cell = f'</code>{str(cell)}<code>' # Close visual block, insert link to person and close
-                excellent_cell += ' '*(max_column_len[n] - len(cell.username) + 1) # Add space before str. max_len - len of fullname
+                excellent_cell += ' '*(max_column_len[n] - len(cell)) # Add space before str. max_len - len of username
                 table += excellent_cell
             else:
-                table += f'{cell:{max_column_len[n]+1}}'
+                table += f'{cell:{max_column_len[n]}}'
         
         table += '\n'
     return '<code>' + table + '</code>'
@@ -59,7 +58,6 @@ def get_timetable_pretty(day: int = None) -> str:
     timetable_data = [[AVAILABLE_TIME[n]] + i for n, i in enumerate(INTERACT_WITH_DB.extract(day))]
     fields = ['Время']
     fields += AVAILABLE_DAYS if day is None else [AVAILABLE_DAYS[day]]
-
     return make_excellent_table(fields=fields, data=timetable_data)
 
 

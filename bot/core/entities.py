@@ -49,10 +49,10 @@ class ProfileLink(BaseModel):
     username: str
 
     def __len__(self):
-        return len(self.fullname)
+        return len(self.username) + 1 # increment for symbol '@'
 
     def excel_repr(self):
-        return f"fullname='{self.fullname}';/nusername='@{self.username}'"
+        return f"fullname='{self.fullname}';username='@{self.username}'"
 
     def __str__(self) -> str:
         return f'<a href="{TELEGRAM_LINK}{self.username}">@{self.username}</a>'
